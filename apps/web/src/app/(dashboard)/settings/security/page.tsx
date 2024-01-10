@@ -1,5 +1,6 @@
 import { getRequiredServerComponentSession } from '@documenso/lib/next-auth/get-server-component-session';
 
+import { SettingsHeader } from '~/components/(dashboard)/settings/layout/header';
 import { AuthenticatorApp } from '~/components/forms/2fa/authenticator-app';
 import { RecoveryCodes } from '~/components/forms/2fa/recovery-codes';
 import { PasswordForm } from '~/components/forms/password';
@@ -9,13 +10,10 @@ export default async function SecuritySettingsPage() {
 
   return (
     <div>
-      <h3 className="text-2xl font-semibold">Security</h3>
-
-      <p className="text-muted-foreground mt-2 text-sm">
-        Here you can manage your password and security settings.
-      </p>
-
-      <hr className="my-4" />
+      <SettingsHeader
+        title="Security"
+        subtitle="Here you can manage your password and security settings."
+      />
 
       <PasswordForm user={user} className="max-w-xl" />
 

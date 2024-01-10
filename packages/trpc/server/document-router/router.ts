@@ -33,10 +33,8 @@ export const documentRouter = router({
     .input(ZGetDocumentByIdQuerySchema)
     .query(async ({ input, ctx }) => {
       try {
-        const { id } = input;
-
         return await getDocumentById({
-          id,
+          ...input,
           userId: ctx.user.id,
         });
       } catch (err) {
@@ -70,20 +68,24 @@ export const documentRouter = router({
     .input(ZCreateDocumentMutationSchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        const { title, documentDataId } = input;
+        const { title, documentDataId, teamId } = input;
 
-        const { remaining } = await getServerLimits({ email: ctx.user.email });
+        // Teams bypass document limits.
+        if (teamId !== undefined) {
+          const { remaining } = await getServerLimits({ email: ctx.user.email });
 
-        if (remaining.documents <= 0) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message:
-              'You have reached your document limit for this month. Please upgrade your plan.',
-          });
+          if (remaining.documents <= 0) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message:
+                'You have reached your document limit for this month. Please upgrade your plan.',
+            });
+          }
         }
 
         return await createDocument({
           userId: ctx.user.id,
+          teamId,
           title,
           documentDataId,
         });
@@ -210,12 +212,9 @@ export const documentRouter = router({
     .input(ZResendDocumentMutationSchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        const { documentId, recipients } = input;
-
         return await resendDocument({
           userId: ctx.user.id,
-          documentId,
-          recipients,
+          ...input,
         });
       } catch (err) {
         console.error(err);
@@ -231,14 +230,13 @@ export const documentRouter = router({
     .input(ZGetDocumentByIdQuerySchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        const { id } = input;
-
         return await duplicateDocumentById({
-          id,
           userId: ctx.user.id,
+          ...input,
         });
       } catch (err) {
         console.log(err);
+
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'We are unable to duplicate this document. Please try again later.',

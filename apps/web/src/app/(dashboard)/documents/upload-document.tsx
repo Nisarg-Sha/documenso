@@ -12,6 +12,7 @@ import { useLimits } from '@documenso/ee/server-only/limits/provider/client';
 import { useAnalytics } from '@documenso/lib/client-only/hooks/use-analytics';
 import { createDocumentData } from '@documenso/lib/server-only/document-data/create-document-data';
 import { putFile } from '@documenso/lib/universal/upload/put-file';
+import { formatDocumentsPath } from '@documenso/lib/utils/teams';
 import { TRPCClientError } from '@documenso/trpc/client';
 import { trpc } from '@documenso/trpc/react';
 import { cn } from '@documenso/ui/lib/utils';
@@ -20,9 +21,13 @@ import { useToast } from '@documenso/ui/primitives/use-toast';
 
 export type UploadDocumentProps = {
   className?: string;
+  team?: {
+    id: number;
+    url: string;
+  };
 };
 
-export const UploadDocument = ({ className }: UploadDocumentProps) => {
+export const UploadDocument = ({ className, team }: UploadDocumentProps) => {
   const router = useRouter();
   const analytics = useAnalytics();
 
@@ -60,6 +65,7 @@ export const UploadDocument = ({ className }: UploadDocumentProps) => {
       const { id } = await createDocument({
         title: file.name,
         documentDataId,
+        teamId: team?.id,
       });
 
       toast({
@@ -74,7 +80,7 @@ export const UploadDocument = ({ className }: UploadDocumentProps) => {
         timestamp: new Date().toISOString(),
       });
 
-      router.push(`/documents/${id}`);
+      router.push(`${formatDocumentsPath(team?.url)}/${id}`);
     } catch (error) {
       console.error(error);
 
@@ -106,11 +112,13 @@ export const UploadDocument = ({ className }: UploadDocumentProps) => {
       />
 
       <div className="absolute -bottom-6 right-0">
-        {remaining.documents > 0 && Number.isFinite(remaining.documents) && (
-          <p className="text-muted-foreground/60 text-xs">
-            {remaining.documents} of {quota.documents} documents remaining this month.
-          </p>
-        )}
+        {team?.id === undefined &&
+          remaining.documents > 0 &&
+          Number.isFinite(remaining.documents) && (
+            <p className="text-muted-foreground/60 text-xs">
+              {remaining.documents} of {quota.documents} documents remaining this month.
+            </p>
+          )}
       </div>
 
       {isLoading && (
@@ -119,7 +127,7 @@ export const UploadDocument = ({ className }: UploadDocumentProps) => {
         </div>
       )}
 
-      {remaining.documents === 0 && (
+      {team?.id === undefined && remaining.documents === 0 && (
         <div className="bg-background/60 absolute inset-0 flex items-center justify-center rounded-lg backdrop-blur-sm">
           <div className="text-center">
             <h2 className="text-muted-foreground/80 text-xl font-semibold">

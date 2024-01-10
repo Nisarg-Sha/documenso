@@ -6,26 +6,38 @@ import { DocumentInviteEmailTemplate } from '@documenso/email/templates/document
 import { FROM_ADDRESS, FROM_NAME } from '@documenso/lib/constants/email';
 import { renderCustomEmailTemplate } from '@documenso/lib/utils/render-custom-email-template';
 import { prisma } from '@documenso/prisma';
+import type { Prisma } from '@documenso/prisma/client';
 import { DocumentStatus, SigningStatus } from '@documenso/prisma/client';
+
+import { getDocumentWhereInput } from './get-document-by-id';
 
 export type ResendDocumentOptions = {
   documentId: number;
   userId: number;
   recipients: number[];
+  teamId?: number;
 };
 
-export const resendDocument = async ({ documentId, userId, recipients }: ResendDocumentOptions) => {
+export const resendDocument = async ({
+  documentId,
+  userId,
+  recipients,
+  teamId,
+}: ResendDocumentOptions) => {
   const user = await prisma.user.findFirstOrThrow({
     where: {
       id: userId,
     },
   });
 
+  const documentWhereInput: Prisma.DocumentWhereUniqueInput = await getDocumentWhereInput({
+    documentId,
+    userId,
+    teamId,
+  });
+
   const document = await prisma.document.findUnique({
-    where: {
-      id: documentId,
-      userId,
-    },
+    where: documentWhereInput,
     include: {
       Recipient: {
         where: {
